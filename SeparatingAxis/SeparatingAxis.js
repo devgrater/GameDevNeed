@@ -14,7 +14,9 @@ function setup() {
     {x : 128, y :128}, 
     {x : 128, y : 64}
   ]);
-  console.log(polygonColliders);
+  
+  moveObject(polygonColliders[0], 40, 60);
+  moveObject(polygonColliders[1], 40, 60);
   //run();
 }
 
@@ -33,9 +35,13 @@ function checkKeys() {
   if (keyIsDown(DOWN_ARROW)) {
     offsety = 2;
   }
-  let newPolygon = polygonColliders[0].map(function(x){
-    x.x += offsetx;
-    x.y += offsety;
+  moveObject(polygonColliders[1], offsetx, offsety);
+}
+
+function moveObject(obj, xo, yo){
+  obj.map(function(x){
+    x.x += xo;
+    x.y += yo;
   });
 }
 
@@ -46,15 +52,14 @@ function draw() {
   let checkedAxis = getAxisToCheck(); //Keep a list axis that we need to compare here.
   let isColliding = true; //Assumes that they are colliding. If we found out that they are not, then change isColliding.
   
-  console.log(checkedAxis);
-  
   //Time to determine the collisions
   //Project each points on to the axis, and check...
   //In reality, we would probably do things differently - probably only check player against the walls. 
   //In other words...? 
   //Anyways, this would work for any shape. For now we are just checking the two.
   
- 
+  let pushawayAxis;
+  let pushawayDistance = Number.MAX_VALUE;
   for(let i = 0; i < checkedAxis.length; i++){
     //For each shape, keep track of its maximum and minimum.
     let projected = [];
@@ -78,15 +83,47 @@ function draw() {
     //Finally, check along the axis:
     let collision = checkCollisionAlongAxis(projected[0], projected[1]);
     if(!collision){
-      isColliding = false;
+      isColliding = false; //If there's not a collision going on, we can stop here!
+      break;
+    }else{
+      //Check the distance, whether it is smaller or larger than the minimum pushaway distance.
+      //If it is smaller than the minimum, then we should use this distance and this axis instead.
+      if(Math.abs(projected[1].min - projected[0].max) <= Math.abs(pushawayDistance)){
+        pushawayDistance = projected[1].min - projected[0].max; //(This is squared. We need to sqrt it afterwards.)
+        pushawayAxis = checkedAxis[i];
+        print(pushawayDistance);
+      }
+      else if(Math.abs(projected[1].max - projected[0].min) <= Math.abs(pushawayDistance)){
+        pushawayDistance = projected[1].max - projected[0].min; //(This is squared. We need to sqrt it afterwards.)
+        pushawayAxis = checkedAxis[i];
+      }
     }
-    print(projected);
-    print(collision);
   }
   
-  
+  print(pushawayAxis);
   if(isColliding){
     fill(128, 0, 0);
+    
+    //Now, push away the objects!
+    let distance = Math.sign(pushawayDistance) * Math.sqrt(Math.abs(pushawayDistance));
+    if(pushawayAxis === "x"){
+      moveObject(polygonColliders[1], -distance, 0);
+    }
+    else if(pushawayAxis === "y"){
+      moveObject(polygonColliders[1], 0, -distance);
+    }
+    else{
+      //Based on the slope, we can calculate out the x-y ratio.
+      //x = 1, y = slope.
+      //Then we need to normalize this value.
+      let slopelen = sqrt(1 + pushawayAxis * pushawayAxis);
+      let xratio = 1 / slopelen;
+      let yratio = pushawayAxis / slopelen;
+      
+      moveObject(polygonColliders[1], -distance * xratio, -distance * yratio);
+      
+    }
+    //let xpushaway = pushawayAxis
   }
   
   for(let i = 0; i < polygonColliders.length; i++){
@@ -176,6 +213,6 @@ function getIntersection(eqa, eqb){
   let ry = eqa.k * rx + eqa.b;
   //return {x : rx, y : ry};
   //just return the distance to the origin (squared) lol
-  let sign = (rx >= 0 && ry >= 0)?1:-1;
+  let sign = (rx >= 0)?1:-1;
   return sign * rx * rx + ry * ry;
 }
