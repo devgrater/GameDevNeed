@@ -33,7 +33,7 @@ function checkKeys() {
   if (keyIsDown(DOWN_ARROW)) {
     offsety = 2;
   }
-  let newPolygon = polygonColliders[1].map(function(x){
+  let newPolygon = polygonColliders[0].map(function(x){
     x.x += offsetx;
     x.y += offsety;
   });
@@ -45,6 +45,8 @@ function draw() {
   noFill(); //Gets override if they two collide.
   let checkedAxis = getAxisToCheck(); //Keep a list axis that we need to compare here.
   let isColliding = true; //Assumes that they are colliding. If we found out that they are not, then change isColliding.
+  
+  console.log(checkedAxis);
   
   //Time to determine the collisions
   //Project each points on to the axis, and check...
@@ -174,6 +176,6 @@ function getIntersection(eqa, eqb){
   let ry = eqa.k * rx + eqa.b;
   //return {x : rx, y : ry};
   //just return the distance to the origin (squared) lol
-  let sign = (rx >= 0 && ry >= 0)?1:0;
-  return sign * (rx * rx + ry * ry);
+  let sign = (rx >= 0 && ry >= 0)?1:-1;
+  return sign * rx * rx + ry * ry;
 }
