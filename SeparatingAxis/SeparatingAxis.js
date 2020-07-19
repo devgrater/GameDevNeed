@@ -5,7 +5,7 @@ function setup() {
   polygonColliders.push([
     {x : 15, y : 32},
     {x : 64, y : 128},
-    {x : 94, y : 30}
+    {x : 94, y : 32}
   ]);
   
   polygonColliders.push([
@@ -58,8 +58,10 @@ function draw() {
   //In other words...? 
   //Anyways, this would work for any shape. For now we are just checking the two.
   
-  let pushawayAxis;
+  let pdX = 0, pdY = 0;
   let pushawayDistance = Number.MAX_VALUE;
+  let pushawayAxis;
+  
   for(let i = 0; i < checkedAxis.length; i++){
     //For each shape, keep track of its maximum and minimum.
     let projected = [];
@@ -88,29 +90,50 @@ function draw() {
     }else{
       //Check the distance, whether it is smaller or larger than the minimum pushaway distance.
       //If it is smaller than the minimum, then we should use this distance and this axis instead.
-      if(Math.abs(projected[1].min - projected[0].max) <= Math.abs(pushawayDistance)){
-        pushawayDistance = projected[1].min - projected[0].max; //(This is squared. We need to sqrt it afterwards.)
-        pushawayAxis = checkedAxis[i];
-        print(pushawayDistance);
+      //let deepness1 = projected[1].min - projected[0].max;
+      
+      let distance;
+      if(projected[1].min > projected[0].min){
+        //Push towards the right?
+        distance = projected[0].max - projected[1].min;
       }
-      else if(Math.abs(projected[1].max - projected[0].min) <= Math.abs(pushawayDistance)){
-        pushawayDistance = projected[1].max - projected[0].min; //(This is squared. We need to sqrt it afterwards.)
+      else{
+        distance = projected[0].min - projected[1].max;
+      }
+      if(Math.abs(distance) < Math.abs(pushawayDistance)){
+        pushawayDistance = distance;
         pushawayAxis = checkedAxis[i];
       }
+      /*
+      let pushawayAxis = checkedAxis[i];
+      let distance = Math.sign(pushawayDistance) * Math.sqrt(Math.abs(pushawayDistance));
+      if(pushawayAxis === "x"){
+        pdX += distance;
+      }
+      else if(pushawayAxis === "y"){
+        pdY += distance;
+      }
+      else{
+        let slopelen = sqrt(1 + pushawayAxis * pushawayAxis);
+        let xratio = 1 / slopelen;
+        let yratio = pushawayAxis / slopelen;
+        pdX += distance * xratio;
+        pdY += distance * yratio;
+      }*/
     }
   }
   
-  print(pushawayAxis);
   if(isColliding){
     fill(128, 0, 0);
+    //moveObject(polygonColliders[1], pdX, pdY);
     
     //Now, push away the objects!
     let distance = Math.sign(pushawayDistance) * Math.sqrt(Math.abs(pushawayDistance));
     if(pushawayAxis === "x"){
-      moveObject(polygonColliders[1], -distance, 0);
+      moveObject(polygonColliders[1], distance, 0);
     }
     else if(pushawayAxis === "y"){
-      moveObject(polygonColliders[1], 0, -distance);
+      moveObject(polygonColliders[1], 0, distance);
     }
     else{
       //Based on the slope, we can calculate out the x-y ratio.
@@ -120,10 +143,10 @@ function draw() {
       let xratio = 1 / slopelen;
       let yratio = pushawayAxis / slopelen;
       
-      moveObject(polygonColliders[1], -distance * xratio, -distance * yratio);
+      moveObject(polygonColliders[1], distance * xratio, distance * yratio);
       
     }
-    //let xpushaway = pushawayAxis
+    //let xpushaway = pushawayAxis*/
   }
   
   for(let i = 0; i < polygonColliders.length; i++){
@@ -140,10 +163,10 @@ function draw() {
 }
 
 function checkCollisionAlongAxis(p1, p2){
-  if(p1.max >= p2.min && p2.max >= p1.min){
+  if(p1.max > p2.min && p2.max > p1.min){
     return true;
   }
-  else if(p1.min <= p2.max && p2.min <= p1.max){
+  else if(p1.min < p2.max && p2.min < p1.max){
     return true;
   }
   return false;
@@ -214,5 +237,5 @@ function getIntersection(eqa, eqb){
   //return {x : rx, y : ry};
   //just return the distance to the origin (squared) lol
   let sign = (rx >= 0)?1:-1;
-  return sign * rx * rx + ry * ry;
+  return sign * (rx * rx + ry * ry);
 }
