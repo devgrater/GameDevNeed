@@ -1,14 +1,43 @@
 let gsx = 0;
 let canvasSize = 512;
 let gridSize = 64;
+let canvas;
+let points;
+let maxDistance;
+let prevVals;
+let voronoiDistance;
+let randomness = 0.0;
+
+let previousFrameVals = [];
 
 function setup() {
-  let canvas = createCanvas(canvasSize, canvasSize);
+  canvas = createCanvas(canvasSize, canvasSize);
+  maxDistance = canvas.width * canvas.width;
   pixelDensity(1);
   gsx = canvasSize / gridSize;
-  let points = populateGridDots(canvas, gridSize, gridSize);
+  points = populateGridDots(canvas, gridSize, gridSize);
   print(points);
-  voronoi(canvas, points, gridSize, gridSize);
+  voronoiDistance = maxDistance;
+  //voronoi(canvas, points, gridSize, gridSize);
+  for(let x = 0; x < canvas.width; x++){
+    let yArray = [];
+    for(let y = 0; y < canvas.height; y++){
+      yArray.push(0);
+    }
+    previousFrameVals.push(yArray);
+  }
+}
+
+
+
+function draw(){
+  //voronoiDistance += 200;
+  for(let i = 0; i < points.length; i++){
+    //let point = points[i];
+    points[i].x += (random() - 0.5) * 4;
+    points[i].y += (random() - 0.5) * 4;
+  }
+  voronoi(canvas, points, gridSize, gridSize, voronoiDistance);
 }
 
 function populateGridDots(canvas, gridx, gridy) {
@@ -18,7 +47,7 @@ function populateGridDots(canvas, gridx, gridy) {
       let rndx = Math.floor(random(0, gridx));
       let rndy = Math.floor(random(0, gridy));
       pointList.push(
-        {x : x * gridx + rndx, y : y * gridx + rndy}
+        {x : x * gridx + rndx * randomness, y : y * gridx + rndy * randomness}
       );
       
       let c = color(0);
@@ -29,7 +58,7 @@ function populateGridDots(canvas, gridx, gridy) {
   return pointList;
 }
 
-function voronoi(canvas, points, gridx, gridy){
+function voronoi(canvas, points, gridx, gridy, voronoiDistance){
   //For each pixel in the canvas:
   for(let x = 0; x < canvas.width; x++){
     for(let y = 0; y < canvas.height; y++){
@@ -37,7 +66,10 @@ function voronoi(canvas, points, gridx, gridy){
       let yzone = Math.floor(y / gridy);
       
       //Get nearby zones:
-      let minDistance = canvas.width * canvas.width; // The minimum distance can't go further than this.
+      
+      let minDistance = voronoiDistance; // The minimum distance can't go further than this.
+      //let subMinDistance = voronoiDistance;
+      //let subSubMinDistance = voronoiDistance;
       
       for(let dx = -1; dx <= 1; dx++){
         for(let dy = -1; dy <= 1; dy++){
@@ -56,10 +88,17 @@ function voronoi(canvas, points, gridx, gridy){
           }
           
           dist = xdiff * xdiff + ydiff * ydiff;
-          if(dist <= minDistance){ minDistance = dist; } //Try to find the nearest point.
+          if(dist <= minDistance){
+            //subMinDistance = minDistance;
+            minDistance = dist; 
+          } //Try to find the nearest point.
         }
       }
       let c = color(Math.sqrt(minDistance) / (1.5 * gridx) * 255); //Remap the color to make the white part brighter
+      //previousFrameVals[x][y] += Math.sqrt(minDistance) / (1.5 * gridx);
+      //let c = color((1-(minDistance - subMinDistance) / subMinDistance) * 80);
+      //let c = color(0.0);
+      //if(Math.sqrt(minDistance))
       set(x, y, c);
       
     }
